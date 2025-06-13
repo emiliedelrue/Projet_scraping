@@ -6,7 +6,15 @@
 import scrapy
 
 
-class ProjetVolleyItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class PlayerItem(scrapy.Item):
+    nom = scrapy.Field()
+    prenom = scrapy.Field()
+    poste = scrapy.Field()
+    age = scrapy.Field()
+    taille = scrapy.Field()
+    poids = scrapy.Field()
+    club = scrapy.Field()
+    photo_url = scrapy.Field()
+    biographie = scrapy.Field()
+    position_nav = scrapy.Field()
+    page_url = scrapy.Field()
