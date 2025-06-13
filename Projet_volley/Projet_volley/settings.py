@@ -66,8 +66,9 @@ ROBOTSTXT_OBEY = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'Projet_volley.pipelines.OCRVolleyPipeline': 200,    
-    'Projet_volley.pipelines.CSVVolleyPipeline': 300,    
-    'Projet_volley.pipelines.PDFVolleyPipeline': 400,   
+    'Projet_volley.pipelines.SimpleFFVBPipeline': 300,
+    'Projet_volley.pipelines.FranceFFVBPipeline': 300,
+    'Projet_volley.pipelines.FederalFFVBPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

@@ -16,6 +16,67 @@ from urllib.parse import unquote
 import pytesseract
 from PIL import Image
 from io import BytesIO
+class SimpleFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions':
+            self.file = open('championnat_france_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')    
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions' and hasattr(self, 'file'):
+            self.file.close()
+
+class FranceFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France':
+            self.file = open('coupe_france_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France' and hasattr(self, 'file'):
+            self.file.close()
+
+class FederalFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_Federal':
+            self.file = open('coupe_france_fédéral_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France_Federal' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_Federal' and hasattr(self, 'file'):
+            self.file.close()
+
+
 
 class CSVVolleyPipeline:
     def open_spider(self, spider):

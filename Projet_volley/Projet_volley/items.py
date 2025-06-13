@@ -18,3 +18,9 @@ class PlayerItem(scrapy.Item):
     biographie = scrapy.Field()
     position_nav = scrapy.Field()
     page_url = scrapy.Field()
+
+
+class DataItem(scrapy.Item):
+    Année = scrapy.Field()
+    Masculin = scrapy.Field()
+    Feminin = scrapy.Field()
