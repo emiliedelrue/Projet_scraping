@@ -13,6 +13,12 @@ class DataItem(scrapy.Item):
     Masculin = scrapy.Field()
     Feminin = scrapy.Field()
 
+class ResultItem(scrapy.Item):
+    Année = scrapy.Field()
+    Masculin = scrapy.Field()
+    Feminin = scrapy.Field()
+    Type_Championnat = scrapy.Field()
+
 
 def clean_text(value):
     """Nettoyer le texte"""

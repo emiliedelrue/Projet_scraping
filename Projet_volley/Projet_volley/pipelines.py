@@ -78,6 +78,54 @@ class FederalFFVBPipeline:
         if spider.name == 'ffvb_champions_France_Federal' and hasattr(self, 'file'):
             self.file.close()
 
+
+class ResultatFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_resultats':
+            self.items = []  
+            self.file_opened = True
+            logging.info("Pipeline initialisé - collecte de toutes les données")
+    
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_resultats':
+            self.items.append(dict(item))
+            logging.info(f"Item collecté: {item.get('Année', 'Année inconnue')} - {item.get('Type_Championnat', 'Type inconnu')}")
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_resultats' and self.file_opened:
+            try:
+                def get_year(item):
+                    try:
+                        année = item.get('Année', [''])[0] if item.get('Année') else ''
+                        return int(année) if année and année.strip() else 0
+                    except (ValueError, TypeError):
+                        return 0
+                
+                self.items.sort(key=get_year, reverse=True)
+                
+                with open('tous_championnats_volley_triés.csv', 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Type_Championnat', 'Année', 'Champion Masculin', 'Champion Féminin'])
+                    
+                    for item in self.items:
+                        championship_type = item.get('Type_Championnat', [''])[0] if item.get('Type_Championnat') else 'Non spécifié'
+                        année = item.get('Année', [''])[0] if item.get('Année') else 'Inconnue'
+                        masculin = item.get('Masculin', [''])[0] if item.get('Masculin') else 'Aucun'
+                        feminin = item.get('Feminin', [''])[0] if item.get('Feminin') else 'Aucun'
+                        
+                        masculin = masculin if masculin.strip() else 'Pas de données'
+                        feminin = feminin if feminin.strip() else 'Pas de données'
+                        
+                        writer.writerow([championship_type, année, masculin, feminin])
+                
+                logging.info(f"Fichier CSV créé avec {len(self.items)} items (toutes données incluses)")
+                
+            except Exception as e:
+                logging.error(f"Erreur lors de la création du fichier trié: {e}")
+                raise
+
+
 class ValidationPipeline:
     """Pipeline de validation des données"""
     
@@ -94,6 +142,10 @@ class ValidationPipeline:
         elif adapter.get('fonction'):
             # Item staff valide
             self.validate_staff_item(adapter, spider)
+        elif adapter.get('Type_Championnat') or adapter.get('Année'):
+            # Item résultat de championnat - ACCEPTER SANS VALIDATION
+            spider.logger.info(f"Item résultat accepté: {adapter.get('Année', 'N/A')} - {adapter.get('Type_Championnat', 'N/A')}")
+            return item
         else:
             # Item invalide
             spider.logger.warning(f"Item rejeté - données insuffisantes: {dict(adapter)}")
@@ -130,6 +182,7 @@ class ValidationPipeline:
         """Valider un item staff"""
         if not adapter.get('fonction'):
             raise DropItem("Fonction du staff manquante")
+
 
 class CSVExportPipeline:
     """Pipeline d'export CSV"""

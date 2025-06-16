@@ -89,6 +89,7 @@ ITEM_PIPELINES = {
     'Projet_volley.pipelines.SimpleFFVBPipeline': 300,
     'Projet_volley.pipelines.FranceFFVBPipeline': 300,
     'Projet_volley.pipelines.FederalFFVBPipeline': 300,
+    'Projet_volley.pipelines.ResultatFFVBPipeline': 700,
 }
 
 
