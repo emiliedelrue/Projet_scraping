@@ -1,7 +1,7 @@
 import scrapy
 from urllib.parse import urljoin, urlparse, parse_qs
 import re
-from Projet_volley.items import DataItem
+from Projet_volley.items import DataItem, PlayerItem, TeamItem, StaffItem
 from itemloaders import ItemLoader
 
 
@@ -53,187 +53,304 @@ class FFVBChampionsFederalSpider(scrapy.Spider):
                 loader.add_css("Feminin", "td:nth-child(3)::text")   
                 yield loader.load_item()
 
-class FFVBPlayerSpider(scrapy.Spider):
+
+class FFVBPlayersSpider(scrapy.Spider):
     name = 'ffvb_players'
-    allowed_domains = ['ffvb.org']
-    start_urls = ['http://www.ffvb.org/index.php?lvlid=384&dsgtypid=37&artid=1217&pos=0']
+    allowed_domains = ['ffvb.org', 'www.ffvb.org']
     
-    custom_settings = {
-        'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'DOWNLOAD_DELAY': 2,
-        'ROBOTSTXT_OBEY': False,
-    }
+    start_urls = [
+        # URL spécifique fournie
+        'http://www.ffvb.org/index.php?lvlid=384&dsgtypid=37&artid=1217&pos=0',
+        
+        # URLs supplémentaires pour les équipes de France
+        'http://www.ffvb.org/288-37-1-EQUIPES-DE-FRANCE',
+        'http://www.ffvb.org/117-37-1-VOLLEY-BALL',
+        'http://www.ffvb.org/282-37-1-BEACH-VOLLEY',
+        
+        # Collectifs spécifiques
+        'http://www.ffvb.org/384-37-1-Le-collectif',  # Équipe masculine
+        'http://www.ffvb.org/386-37-1-Le-Collectif',  # Équipe féminine
+    ]
+    
+    def __init__(self):
+        self.players_count = 0
+        self.teams_count = 0
+        self.staff_count = 0
 
     def parse(self, response):
-        """Parse chaque page de joueur"""
+        """Parse initial des pages d'équipes"""
+        self.logger.info(f'🏐 Parsing: {response.url}')
         
-        # Extraire les informations du joueur actuel
-        player_data = self.extract_player_info(response)
+        # Extraire les informations de l'équipe
+        yield from self.extract_team_info(response)
         
-        if player_data:
-            yield player_data
+        # Extraire les joueurs de cette page
+        yield from self.extract_players(response)
         
-        # Chercher le lien vers le joueur suivant
-        next_link = response.css('a:contains(">>")::attr(href)').get()
+        # Extraire le staff
+        yield from self.extract_staff(response)
         
-        # Alternative si le sélecteur ci-dessus ne fonctionne pas
-        if not next_link:
-            next_link = response.css('a[href*="pos="]:contains("GREBENNIKOV"), a[href*="pos="]:contains(">>")::attr(href)').get()
+        # Suivre les liens vers d'autres équipes
+        team_links = response.css('a[href*="collectif"], a[href*="equipe"]::attr(href)').getall()
+        for link in team_links:
+            yield response.follow(link, self.parse)
         
-        # Autre alternative : chercher tous les liens avec pos= et prendre le suivant
-        if not next_link:
-            all_nav_links = response.css('a[href*="pos="]::attr(href)').getall()
-            current_pos = self.get_position_from_url(response.url)
-            
-            for link in all_nav_links:
-                link_pos = self.get_position_from_url(link)
-                if link_pos == current_pos + 1:
-                    next_link = link
-                    break
-        
-        # Si on a trouvé un lien suivant, continuer
-        if next_link:
-            next_url = urljoin(response.url, next_link)
-            self.logger.info(f"Navigation vers: {next_url}")
-            yield scrapy.Request(
-                url=next_url,
-                callback=self.parse,
-                dont_filter=True
-            )
-        else:
-            self.logger.info("Fin de la navigation - plus de joueurs")
+        # Suivre les liens vers les pages de joueurs individuels
+        player_links = response.css('a[href*="joueur"], a[href*="player"]::attr(href)').getall()
+        for link in player_links:
+            yield response.follow(link, self.parse_player_detail)
 
-    def extract_player_info(self, response):
-        """Extrait les informations du joueur depuis la page"""
+    def extract_team_info(self, response):
+        """Extraire les informations de l'équipe"""
+        loader = ItemLoader(item=TeamItem(), response=response)
         
-        # Récupérer le nom du joueur depuis le lien de navigation ou le titre
-        player_name = ""
+        # Nom de l'équipe
+        team_name = response.css('h1::text, .team-name::text, .equipe-titre::text').get()
+        if not team_name:
+            # Essayer d'extraire depuis le titre de la page
+            team_name = response.css('title::text').get()
+            if team_name:
+                team_name = team_name.replace('FFvolley', '').strip()
         
-        # Méthode 1: depuis le lien de navigation actuel
-        nav_links = response.css('a[href*="pos="]')
-        current_pos = self.get_position_from_url(response.url)
+        loader.add_value('nom_equipe', team_name)
+        loader.add_value('url_source', response.url)
         
-        for link in nav_links:
-            link_pos = self.get_position_from_url(link.css('::attr(href)').get())
-            if link_pos == current_pos:
-                player_name = link.css('::text').get()
-                if player_name:
-                    player_name = player_name.replace('>>>', '').strip()
+        # Déterminer la catégorie
+        if 'masculin' in response.url.lower() or 'homme' in (team_name or '').lower():
+            loader.add_value('categorie', 'Équipe de France Masculine')
+        elif 'feminin' in response.url.lower() or 'femme' in (team_name or '').lower():
+            loader.add_value('categorie', 'Équipe de France Féminine')
+        elif 'beach' in response.url.lower():
+            loader.add_value('categorie', 'Beach Volley')
+        elif 'jeune' in response.url.lower():
+            loader.add_value('categorie', 'Équipes Jeunes')
+        else:
+            loader.add_value('categorie', 'Équipe de France')
+        
+        # Entraîneur
+        coach = response.css('.coach::text, .entraineur::text').get()
+        if not coach:
+            # Chercher dans le texte
+            text = ' '.join(response.css('*::text').getall())
+            coach_match = re.search(r'(?:entraîneur|coach|sélectionneur)[:\s]*([A-Z][a-z]+ [A-Z][a-z]+)', text, re.IGNORECASE)
+            if coach_match:
+                coach = coach_match.group(1)
+        
+        loader.add_value('entraineur', coach)
+        
+        if team_name:
+            self.teams_count += 1
+            yield loader.load_item()
+
+    def extract_players(self, response):
+        """Extraire les joueurs de la page"""
+        # Essayer différents sélecteurs pour les joueurs
+        player_selectors = [
+            '.player-card',
+            '.joueur',
+            '.player',
+            '.effectif-item',
+            '.roster-player',
+            'div[class*="player"]',
+            'div[class*="joueur"]',
+            '.collectif-joueur'
+        ]
+        
+        players_found = []
+        for selector in player_selectors:
+            players = response.css(selector)
+            if players:
+                players_found.extend(players)
                 break
         
-        # Méthode 2: depuis l'URL de l'image CV
-        cv_image = response.css('div.articleTexte img::attr(src)').get()
-        cv_image_alt = response.css('div.articleTexte img::attr(alt)').get()
+        # Si pas de structure de cartes, chercher dans les tableaux
+        if not players_found:
+            tables = response.css('table')
+            for table in tables:
+                rows = table.css('tr')[1:]  # Skip header
+                for row in rows:
+                    cells = row.css('td')
+                    if len(cells) >= 2:  # Au moins nom et prénom
+                        players_found.append(row)
         
-        # Extraire le nom depuis le nom du fichier image si pas trouvé
-        if not player_name and cv_image:
-            filename = cv_image.split('/')[-1]
-            # Format exemple: "1%20Barth%C3%A9l%C3%A9my%20Chinenyeze.png"
-            name_from_file = filename.replace('.png', '').replace('.jpg', '')
-            # Décoder les caractères URL
-            import urllib.parse
-            name_from_file = urllib.parse.unquote(name_from_file)
-            # Supprimer le numéro au début
-            name_from_file = re.sub(r'^\d+\s*', '', name_from_file)
-            player_name = name_from_file
+        # Si toujours rien, essayer d'extraire depuis les listes
+        if not players_found:
+            lists = response.css('ul, ol')
+            for lst in lists:
+                items = lst.css('li')
+                for item in items:
+                    text = item.css('::text').get()
+                    if text and any(keyword in text.lower() for keyword in ['joueur', 'player', '#']):
+                        players_found.append(item)
         
-        if not player_name:
-            return None
-        
-        # Séparer nom et prénom
-        name_parts = player_name.split()
-        if len(name_parts) >= 2:
-            nom = name_parts[0]
-            prenom = ' '.join(name_parts[1:])
-        else:
-            nom = player_name
-            prenom = ""
-        
-        # URL complète de l'image CV
-        full_cv_url = urljoin(response.url, cv_image) if cv_image else ""
-        
-        player_data = {
-            'nom': nom,
-            'prenom': prenom,
-            'poste': '',  # À remplir manuellement ou par OCR de l'image
-            'age': '',
-            'taille': '',
-            'poids': '',
-            'club': '',
-            'photo_url': full_cv_url,
-            'biographie': '',
-            'position_nav': current_pos,
-            'page_url': response.url
-        }
-        
-        self.logger.info(f"Joueur trouvé: {nom} {prenom}")
-        return player_data
-    
-    def get_position_from_url(self, url):
-        """Extrait la position depuis l'URL"""
-        if not url:
-            return 0
-        
-        try:
-            parsed_url = urlparse(url)
-            query_params = parse_qs(parsed_url.query)
-            pos = query_params.get('pos', ['0'])[0]
-            return int(pos)
-        except:
-            return 0
+        # Traiter chaque joueur trouvé
+        for player_element in players_found:
+            yield from self.extract_single_player(player_element, response)
 
-# Version alternative pour extraire TOUS les liens de navigation d'abord
-class FFVBPlayerSpiderV2(scrapy.Spider):
-    name = 'ffvb_players_v2'
-    allowed_domains = ['ffvb.org']
-    start_urls = ['http://www.ffvb.org/index.php?lvlid=384&dsgtypid=37&artid=1217&pos=0']
-    
-    def parse(self, response):
-        """Parse la première page et trouve tous les liens de navigation"""
+    def extract_single_player(self, player_element, response):
+        """Extraire les données d'un joueur individuel"""
+        loader = ItemLoader(item=PlayerItem(), selector=player_element)
         
-        # Extraire tous les liens de navigation des joueurs
-        nav_links = []
+        # Nom et prénom
+        name_text = player_element.css('.name::text, .nom::text, .player-name::text').get()
+        if not name_text:
+            # Essayer depuis les cellules de tableau
+            cells = player_element.css('td::text').getall()
+            if cells:
+                name_text = ' '.join(cells[:2])  # Supposer que nom et prénom sont dans les 2 premières cellules
+            else:
+                # Essayer le texte complet
+                name_text = player_element.css('::text').get()
         
-        # Chercher dans la navigation (si elle existe sur la page)
-        player_links = response.css('a[href*="pos="]::attr(href)').getall()
+        if name_text:
+            # Séparer nom et prénom
+            name_parts = name_text.strip().split()
+            if len(name_parts) >= 2:
+                loader.add_value('prenom', name_parts[0])
+                loader.add_value('nom', ' '.join(name_parts[1:]))
+                loader.add_value('nom_complet', name_text)
+            else:
+                loader.add_value('nom_complet', name_text)
         
-        # Si pas de navigation visible, créer les URLs manuellement
-        if not player_links:
-            # Essayer de déterminer le nombre total de joueurs
-            # En général, les équipes nationales ont entre 12-20 joueurs
-            base_url = "http://www.ffvb.org/index.php?lvlid=384&dsgtypid=37&artid={}&pos={}"
-            
-            # Commencer avec les IDs d'articles probables
-            for artid in range(1217, 1240):  # Ajuster selon le besoin
-                for pos in range(0, 25):  # Maximum 25 joueurs
-                    url = base_url.format(artid, pos)
-                    nav_links.append(url)
+        # Numéro de maillot
+        numero = player_element.css('.number::text, .numero::text').get()
+        if not numero:
+            # Chercher un numéro dans le texte
+            all_text = ' '.join(player_element.css('::text').getall())
+            numero_match = re.search(r'#?(\d{1,2})', all_text)
+            if numero_match:
+                numero = numero_match.group(1)
+        loader.add_value('numero_maillot', numero)
+        
+        # Poste
+        poste = player_element.css('.position::text, .poste::text').get()
+        if not poste:
+            # Chercher dans le texte des postes courants
+            all_text = ' '.join(player_element.css('::text').getall()).lower()
+            postes_map = {
+                'passeur': 'Passeur',
+                'libero': 'Libéro',
+                'central': 'Central',
+                'attaquant': 'Attaquant',
+                'pointu': 'Pointu',
+                'réceptionneur': 'Réceptionneur-Attaquant',
+                'opposite': 'Attaquant Opposé'
+            }
+            for key, value in postes_map.items():
+                if key in all_text:
+                    poste = value
+                    break
+        loader.add_value('poste', poste)
+        
+        # Taille
+        taille = player_element.css('.height::text, .taille::text').get()
+        if not taille:
+            all_text = ' '.join(player_element.css('::text').getall())
+            taille_match = re.search(r'(\d+m\d+|\d{3}cm|\d+\.\d+m)', all_text)
+            if taille_match:
+                taille = taille_match.group(1)
+        loader.add_value('taille', taille)
+        
+        # Age/Date de naissance
+        age = player_element.css('.age::text, .date-naissance::text').get()
+        if not age:
+            all_text = ' '.join(player_element.css('::text').getall())
+            # Chercher une date de naissance
+            date_match = re.search(r'(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})', all_text)
+            if date_match:
+                age = date_match.group(1)
+            else:
+                # Chercher un âge
+                age_match = re.search(r'(\d{2})\s*ans?', all_text)
+                if age_match:
+                    age = age_match.group(1)
+        loader.add_value('age', age)
+        
+        # Club
+        club = player_element.css('.club::text, .team::text').get()
+        loader.add_value('club_actuel', club)
+        
+        # Photo
+        photo = player_element.css('img::attr(src)').get()
+        if photo:
+            loader.add_value('photo_url', urljoin(response.url, photo))
+        
+        # Équipe (déterminée depuis l'URL)
+        if 'masculin' in response.url.lower():
+            loader.add_value('equipe', 'Équipe de France Masculine')
+        elif 'feminin' in response.url.lower():
+            loader.add_value('equipe', 'Équipe de France Féminine')
+        elif 'beach' in response.url.lower():
+            loader.add_value('equipe', 'Beach Volley France')
         else:
-            nav_links = [urljoin(response.url, link) for link in player_links]
+            loader.add_value('equipe', 'Équipe de France')
         
-        # Visiter chaque lien
-        for url in nav_links:
-            yield scrapy.Request(
-                url=url,
-                callback=self.parse_player,
-                dont_filter=True
-            )
-    
-    def parse_player(self, response):
-        """Parse une page de joueur spécifique"""
+        loader.add_value('url_source', response.url)
         
-        # Vérifier si la page existe (pas d'erreur 404)
-        if response.status != 200:
-            return
+        # Ne yield que si on a au moins un nom
+        if name_text:
+            self.players_count += 1
+            yield loader.load_item()
+
+    def extract_staff(self, response):
+        """Extraire les membres du staff"""
+        # Chercher les informations du staff
+        staff_sections = response.css('.staff, .encadrement, .coaching-staff')
         
-        # Vérifier s'il y a bien un CV/image
-        cv_image = response.css('div.articleTexte img::attr(src)').get()
-        if not cv_image:
-            return
+        for section in staff_sections:
+            staff_members = section.css('.staff-member, .coach, .member')
+            
+            for member in staff_members:
+                loader = ItemLoader(item=StaffItem(), selector=member)
+                
+                name = member.css('.name::text, ::text').get()
+                if name:
+                    name_parts = name.strip().split()
+                    if len(name_parts) >= 2:
+                        loader.add_value('prenom', name_parts[0])
+                        loader.add_value('nom', ' '.join(name_parts[1:]))
+                
+                fonction = member.css('.function::text, .role::text').get()
+                loader.add_value('fonction', fonction)
+                
+                # Équipe
+                if 'masculin' in response.url.lower():
+                    loader.add_value('equipe', 'Équipe de France Masculine')
+                elif 'feminin' in response.url.lower():
+                    loader.add_value('equipe', 'Équipe de France Féminine')
+                
+                loader.add_value('url_source', response.url)
+                
+                if name:
+                    self.staff_count += 1
+                    yield loader.load_item()
+
+    def parse_player_detail(self, response):
+        """Parser une page de détail d'un joueur"""
+        loader = ItemLoader(item=PlayerItem(), response=response)
         
-        # Extraire les informations comme dans la version précédente
-        spider_v1 = FFVBPlayerSpider()
-        player_data = spider_v1.extract_player_info(response)
+        # Informations détaillées du joueur
+        loader.add_css('nom_complet', 'h1::text')
+        loader.add_css('poste', '.position::text')
+        loader.add_css('taille', '.height::text')
+        loader.add_css('poids', '.weight::text')
+        loader.add_css('date_naissance', '.birthdate::text')
+        loader.add_css('club_actuel', '.current-club::text')
+        loader.add_css('nationalite', '.nationality::text')
         
-        if player_data:
-            yield player_data
+        # Photo
+        photo = response.css('.player-photo img::attr(src)').get()
+        if photo:
+            loader.add_value('photo_url', urljoin(response.url, photo))
+        
+        loader.add_value('url_source', response.url)
+        
+        yield loader.load_item()
+
+    def closed(self, reason):
+        """Statistiques finales"""
+        self.logger.info(f'🎉 Scraping terminé!')
+        self.logger.info(f'📊 Statistiques:')
+        self.logger.info(f'   👥 Joueurs: {self.players_count}')
+        self.logger.info(f'   🏆 Équipes: {self.teams_count}')
+        self.logger.info(f'   👔 Staff: {self.staff_count}')

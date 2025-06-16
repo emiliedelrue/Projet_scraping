@@ -50,11 +50,6 @@ ROBOTSTXT_OBEY = False
 #    "Projet_volley.middlewares.ProjetVolleySpiderMiddleware": 543,
 #}
 
-# Enable or disable downloader middlewares
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "Projet_volley.middlewares.ProjetVolleyDownloaderMiddleware": 543,
-#}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -62,14 +57,40 @@ ROBOTSTXT_OBEY = False
 #    "scrapy.extensions.telnet.TelnetConsole": None,
 #}
 
-# Configure item pipelines
-# See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+DOWNLOADER_MIDDLEWARES = {
+    # Middlewares par défaut de Scrapy (désactivés si besoin)
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    
+    # Nos middlewares personnalisés
+    'Projet_volley.middlewares.RotateUserAgentMiddleware': 400,
+    'Projet_volley.middlewares.HeadersMiddleware': 500,
+    'Projet_volley.middlewares.CustomRetryMiddleware': 550,
+    'Projet_volley.middlewares.ThrottleMiddleware': 600,
+    'Projet_volley.middlewares.LoggingMiddleware': 650,
+    'Projet_volley.middlewares.ResponseSizeMiddleware': 700,
+    'Projet_volley.middlewares.ErrorHandlingMiddleware': 750,
+    'Projet_volley.middlewares.CacheMiddleware': 800,
+}
+
+# Configuration des spider middlewares
+SPIDER_MIDDLEWARES = {
+    'Projet_volley.middlewares.FFVBScraperSpiderMiddleware': 543,
+}
+
+# Configuration des pipelines
 ITEM_PIPELINES = {
-    'Projet_volley.pipelines.OCRVolleyPipeline': 200,    
+    'Projet_volley.pipelines.ValidationPipeline': 200,
+    'Projet_volley.pipelines.DuplicateFilterPipeline': 300,
+    'Projet_volley.pipelines.CSVExportPipeline': 400,
+    'Projet_volley.pipelines.JSONExportPipeline': 500,
+    'Projet_volley.pipelines.DatabasePipeline': 600,
+    'Projet_volley.pipelines.StatisticsPipeline': 700,
     'Projet_volley.pipelines.SimpleFFVBPipeline': 300,
     'Projet_volley.pipelines.FranceFFVBPipeline': 300,
     'Projet_volley.pipelines.FederalFFVBPipeline': 300,
 }
+
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
