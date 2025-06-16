@@ -7,6 +7,7 @@ from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 import logging
 
+
 class ValidationPipeline:
     """Pipeline de validation des données"""
     
@@ -452,3 +453,136 @@ class StatisticsPipeline:
             self.stats['total_staff'] += 1
         
         return item
+    
+
+
+class SimpleFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions':
+            self.file = open('championnat_france_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')    
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions' and hasattr(self, 'file'):
+            self.file.close()
+
+
+class FranceFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France':
+            self.file = open('coupe_france_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France' and hasattr(self, 'file'):
+            self.file.close()
+
+
+class FederalFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_Federal':
+            self.file = open('coupe_france_fédéral_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France_Federal' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_Federal' and hasattr(self, 'file'):
+            self.file.close()
+
+
+class ResultatFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_resultats':
+            self.items = []  
+            self.file_opened = True
+            logging.info("Pipeline initialisé - collecte de toutes les données")
+    
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_resultats':
+            self.items.append(dict(item))
+            logging.info(f"Item collecté: {item.get('Année', 'Année inconnue')} - {item.get('Type_Championnat', 'Type inconnu')}")
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_resultats' and self.file_opened:
+            try:
+                def get_year(item):
+                    try:
+                        année = item.get('Année', [''])[0] if item.get('Année') else ''
+                        return int(année) if année and année.strip() else 0
+                    except (ValueError, TypeError):
+                        return 0
+                
+                self.items.sort(key=get_year, reverse=True)
+                
+                with open('tous_championnats_volley_triés.csv', 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Type_Championnat', 'Année', 'Champion Masculin', 'Champion Féminin'])
+                    
+                    for item in self.items:
+                        championship_type = item.get('Type_Championnat', [''])[0] if item.get('Type_Championnat') else 'Non spécifié'
+                        année = item.get('Année', [''])[0] if item.get('Année') else 'Inconnue'
+                        masculin = item.get('Masculin', [''])[0] if item.get('Masculin') else 'Aucun'
+                        feminin = item.get('Feminin', [''])[0] if item.get('Feminin') else 'Aucun'
+                        
+                        masculin = masculin if masculin.strip() else 'Pas de données'
+                        feminin = feminin if feminin.strip() else 'Pas de données'
+                        
+                        writer.writerow([championship_type, année, masculin, feminin])
+                
+                logging.info(f"Fichier CSV créé avec {len(self.items)} items (toutes données incluses)")
+                
+            except Exception as e:
+                logging.error(f"Erreur lors de la création du fichier trié: {e}")
+                raise
+
+
+class ChampionBeachFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley':
+            self.file = open('championnat_france_beach_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley' and hasattr(self, 'file'):
+            self.file.close()
+

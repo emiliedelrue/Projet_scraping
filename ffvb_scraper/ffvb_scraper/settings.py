@@ -61,6 +61,11 @@ ITEM_PIPELINES = {
     'ffvb_scraper.pipelines.JSONExportPipeline': 500,
     'ffvb_scraper.pipelines.DatabasePipeline': 600,
     'ffvb_scraper.pipelines.StatisticsPipeline': 700,
+    'ffvb_scraper.pipelines.SimpleFFVBPipeline': 300,
+    'ffvb_scraper.pipelines.FranceFFVBPipeline': 300,
+    'ffvb_scraper.pipelines.FederalFFVBPipeline': 300,
+    'ffvb_scraper.pipelines.ResultatFFVBPipeline': 300,
+    'ffvb_scraper.pipelines.ChampionBeachFFVBPipeline': 300,
 }
 
 # Configuration des retry
