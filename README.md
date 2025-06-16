@@ -37,7 +37,7 @@ Projet_scraping/
 
 1. **Cloner le projet**
 ```bash
-git clone <url-du-repo>
+git clone https://github.com/emiliedelrue/Projet_scraping.git
 cd Projet_scraping
 ```
 
