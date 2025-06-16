@@ -11,7 +11,7 @@ from scrapy.crawler import CrawlerProcess
 
 def check_existing_data():
     """Vérifie les données existantes"""
-    print("🔍 VÉRIFICATION DES DONNÉES EXISTANTES")
+    print(" VÉRIFICATION DES DONNÉES EXISTANTES")
     print("=" * 40)
     
     # Chercher tous les fichiers CSV
@@ -106,7 +106,7 @@ def run_base_scraper():
             spider_available = False
         
         if spider_available:
-            print("✅ Spider trouvé - lancement du scraping...")
+            print(" Spider trouvé - lancement du scraping...")
             process = CrawlerProcess(settings)
             process.crawl(FFVBAdvancedPlayerSpider)
             process.start()
@@ -220,7 +220,7 @@ def run_direct_scraper():
 
 def main():
     """Fonction principale"""
-    print("🏐 VÉRIFICATION ET SCRAPING DE BASE FFVB")
+    print("VÉRIFICATION ET SCRAPING DE BASE FFVB")
     print("Prépare les données pour l'extraction OCR")
     print()
     
@@ -248,8 +248,9 @@ def main():
         print(f"\n SCRAPING TERMINÉ AVEC SUCCÈS!")
         print(f" Fichier créé: {result_file}")
         print(f"\n PROCHAINES ÉTAPES:")
-        print(f"1. python complete_data_extraction.py")
-        print(f"2. OU directement: python final_ocr_extractor_optimized.py")
+        print(f"   python clean_duplicates.py")
+        print(f"   PUIS")
+        print(f"   python final_ocr_extractor.py")
     else:
         print(f"\n ÉCHEC DU SCRAPING")
         print(f" Vérifiez votre connexion internet et les dépendances")
