@@ -18,10 +18,10 @@ def check_existing_data():
     csv_files = glob.glob("*.csv")
     
     if not csv_files:
-        print("❌ Aucun fichier CSV trouvé")
+        print("Aucun fichier CSV trouvé")
         return None
     
-    print(f"📁 Fichiers CSV trouvés: {len(csv_files)}")
+    print(f"Fichiers CSV trouvés: {len(csv_files)}")
     
     # Analyser chaque fichier
     best_file = None
@@ -46,7 +46,7 @@ def check_existing_data():
                 
                 score = len(rows) + (players_with_images * 2) + (10 if has_images else 0)
                 
-                print(f"📊 {filename}:")
+                print(f"{filename}:")
                 print(f"   - Lignes: {len(rows)}")
                 print(f"   - Headers: {len(headers)}")
                 print(f"   - Avec images CV: {players_with_images}")
@@ -56,21 +56,21 @@ def check_existing_data():
                     best_score = score
                     best_file = filename
             else:
-                print(f"⚠️ {filename}: Pas un fichier de joueurs")
+                print(f"{filename}: Pas un fichier de joueurs")
         
         except Exception as e:
-            print(f"❌ Erreur lecture {filename}: {e}")
+            print(f"Erreur lecture {filename}: {e}")
     
     if best_file:
-        print(f"\n🏆 MEILLEUR FICHIER: {best_file} (score: {best_score})")
+        print(f"\n MEILLEUR FICHIER: {best_file} (score: {best_score})")
         return best_file
     else:
-        print(f"\n❌ Aucun fichier de joueurs valide trouvé")
+        print(f"\n Aucun fichier de joueurs valide trouvé")
         return None
 
 def run_base_scraper():
     """Lance le scraper de base pour obtenir les données initiales"""
-    print("\n🕷️ LANCEMENT DU SCRAPER DE BASE")
+    print("\n LANCEMENT DU SCRAPER DE BASE")
     print("=" * 35)
     
     try:
@@ -115,23 +115,23 @@ def run_base_scraper():
             if os.path.exists('ffvb_players_base.csv'):
                 with open('ffvb_players_base.csv', 'r', encoding='utf-8') as f:
                     lines = sum(1 for line in f) - 1  # -1 pour header
-                print(f"✅ Scraping réussi: {lines} joueurs dans ffvb_players_base.csv")
+                print(f"Scraping réussi: {lines} joueurs dans ffvb_players_base.csv")
                 return 'ffvb_players_base.csv'
             else:
-                print("❌ Fichier de sortie non créé")
+                print("Fichier de sortie non créé")
                 return None
         else:
-            print("❌ Spider non trouvé - utilisation scraper direct")
+            print("Spider non trouvé - utilisation scraper direct")
             return run_direct_scraper()
     
     except Exception as e:
-        print(f"❌ Erreur scraper Scrapy: {e}")
-        print("🔄 Tentative avec scraper direct...")
+        print(f"Erreur scraper Scrapy: {e}")
+        print("Tentative avec scraper direct...")
         return run_direct_scraper()
 
 def run_direct_scraper():
     """Scraper direct sans Scrapy"""
-    print("\n🔍 SCRAPER DIRECT (SANS SCRAPY)")
+    print("\n SCRAPER DIRECT (SANS SCRAPY)")
     print("-" * 30)
     
     import requests
@@ -147,7 +147,7 @@ def run_direct_scraper():
     players = []
     base_url = "http://www.ffvb.org/index.php?lvlid=384&dsgtypid=37&artid="
     
-    print("🔍 Recherche des joueurs...")
+    print("Recherche des joueurs...")
     
     # Tester une plage d'URLs
     for artid in range(1217, 1235):
@@ -183,13 +183,13 @@ def run_direct_scraper():
                             }
                             
                             players.append(player_data)
-                            print(f"      ✅ Trouvé: {nom_decoded} (#{numero})")
+                            print(f"       Trouvé: {nom_decoded} (#{numero})")
                 
                 import time
                 time.sleep(1)
                 
             except Exception as e:
-                print(f"      ❌ Erreur {url}: {e}")
+                print(f"       Erreur {url}: {e}")
                 continue
     
     if players:
@@ -211,11 +211,11 @@ def run_direct_scraper():
             for player in players:
                 writer.writerow(player)
         
-        print(f"\n✅ Scraper direct réussi: {len(players)} joueurs")
-        print(f"📄 Fichier créé: {output_file}")
+        print(f"\n Scraper direct réussi: {len(players)} joueurs")
+        print(f" Fichier créé: {output_file}")
         return output_file
     else:
-        print("\n❌ Aucun joueur trouvé avec le scraper direct")
+        print("\n Aucun joueur trouvé avec le scraper direct")
         return None
 
 def main():
@@ -228,31 +228,31 @@ def main():
     existing_file = check_existing_data()
     
     if existing_file:
-        print(f"\n✅ DONNÉES EXISTANTES TROUVÉES: {existing_file}")
+        print(f"\n DONNÉES EXISTANTES TROUVÉES: {existing_file}")
         
         choice = input("\nUtiliser ce fichier ou re-scraper? (u/r): ").strip().lower()
         
         if choice == 'u':
-            print(f"📊 Utilisation de {existing_file}")
-            print(f"\n🚀 PROCHAINE ÉTAPE:")
-            print(f"   python complete_data_extraction.py")
-            print(f"   OU")
-            print(f"   python final_ocr_extractor_optimized.py")
+            print(f" Utilisation de {existing_file}")
+            print(f"\n PROCHAINE ÉTAPE:")
+            print(f"   python clean_duplicates.py")
+            print(f"   PUIS")
+            print(f"   python final_ocr_extractor.py")
             return
     
     # 2. Lancer le scraping de base
-    print(f"\n🔄 LANCEMENT DU SCRAPING DE BASE...")
+    print(f"\n LANCEMENT DU SCRAPING DE BASE...")
     result_file = run_base_scraper()
     
     if result_file:
-        print(f"\n🎉 SCRAPING TERMINÉ AVEC SUCCÈS!")
-        print(f"📄 Fichier créé: {result_file}")
-        print(f"\n🚀 PROCHAINES ÉTAPES:")
+        print(f"\n SCRAPING TERMINÉ AVEC SUCCÈS!")
+        print(f" Fichier créé: {result_file}")
+        print(f"\n PROCHAINES ÉTAPES:")
         print(f"1. python complete_data_extraction.py")
         print(f"2. OU directement: python final_ocr_extractor_optimized.py")
     else:
-        print(f"\n❌ ÉCHEC DU SCRAPING")
-        print(f"💡 Vérifiez votre connexion internet et les dépendances")
+        print(f"\n ÉCHEC DU SCRAPING")
+        print(f" Vérifiez votre connexion internet et les dépendances")
 
 if __name__ == "__main__":
     main()

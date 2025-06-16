@@ -123,12 +123,12 @@ class FFVBOptimizedExtractor:
         # Charger les joueurs
         players = self.load_players_from_csv()
         if not players:
-            print("❌ Aucun joueur trouvé")
+            print(" Aucun joueur trouvé")
             return
         
-        print(f"📊 {len(players)} joueurs à traiter")
-        print(f"🔧 Configurations OCR multiples")
-        print(f"🎯 Patterns optimisés pour postes/clubs français")
+        print(f" {len(players)} joueurs à traiter")
+        print(f" Configurations OCR multiples")
+        print(f" Patterns optimisés pour postes/clubs français")
         print()
         
         # Initialiser le fichier de sortie
@@ -139,7 +139,7 @@ class FFVBOptimizedExtractor:
             name = player.get('nom_joueur', 'N/A')
             numero = player.get('numero', 'N/A')
             
-            print(f"🏐 [{i:2d}/{len(players)}] {name} (#{numero})")
+            print(f" [{i:2d}/{len(players)}] {name} (#{numero})")
             
             try:
                 # Extraire avec toutes les optimisations
@@ -161,7 +161,7 @@ class FFVBOptimizedExtractor:
                 time.sleep(1.5)
                 
             except Exception as e:
-                print(f"   ❌ Erreur: {e}")
+                print(f"    Erreur: {e}")
                 self.error_count += 1
                 self.save_player_data(player)
         
@@ -192,7 +192,7 @@ class FFVBOptimizedExtractor:
             return best_result
         
         except Exception as e:
-            print(f"   ❌ Extraction échouée: {e}")
+            print(f"    Extraction échouée: {e}")
             return {'ocr_status': 'error', 'ocr_error': str(e)}
 
     def test_multiple_ocr_approaches(self, image, player_name):
@@ -234,7 +234,7 @@ class FFVBOptimizedExtractor:
             best['ocr_status'] = 'success'
             
             if self.debug_mode:
-                print(f"   🏆 Meilleur: {best.get('ocr_method')} (score: {best.get('quality_score')})")
+                print(f"    Meilleur: {best.get('ocr_method')} (score: {best.get('quality_score')})")
             
             return best
         else:
@@ -278,7 +278,7 @@ class FFVBOptimizedExtractor:
             versions['binary'] = threshold
             
         except Exception as e:
-            print(f"   ⚠️ Erreur preprocessing: {e}")
+            print(f"    Erreur preprocessing: {e}")
             versions['original'] = image
         
         return versions
@@ -320,7 +320,7 @@ class FFVBOptimizedExtractor:
             if field_value:
                 data[field] = field_value
                 if self.debug_mode:
-                    print(f"     ✅ {field}: {field_value}")
+                    print(f"      {field}: {field_value}")
         
         # Post-traitement spécialisé par joueur
         data = self.post_process_by_player_context(data, text, player_name)
@@ -411,7 +411,8 @@ class FFVBOptimizedExtractor:
                 'libero': 'Libéro',
                 'réceptionneur': 'Réceptionneur-Attaquant',
                 'receptionneur': 'Réceptionneur-Attaquant',
-                'outside': 'Réceptionneur-Attaquant'
+                'outside': 'Réceptionneur-Attaquant',
+                'pointu': 'Attaquant (Pointu)'
             }
             
             value_lower = value.lower()
@@ -563,14 +564,14 @@ class FFVBOptimizedExtractor:
                         reader = csv.DictReader(f)
                         players = [row for row in reader if row.get('nom_joueur')]
                     
-                    print(f"📂 Fichier utilisé: {csv_file}")
+                    print(f" Fichier utilisé: {csv_file}")
                     return players
                     
                 except Exception as e:
-                    print(f"⚠️ Erreur lecture {csv_file}: {e}")
+                    print(f" Erreur lecture {csv_file}: {e}")
                     continue
         
-        print(f"❌ Aucun fichier de données trouvé")
+        print(f" Aucun fichier de données trouvé")
         return []
 
     def combine_player_data(self, original_data, ocr_data):
@@ -650,9 +651,9 @@ class FFVBOptimizedExtractor:
                 found_fields.append(f"{field}:{value}")
         
         if found_fields:
-            print(f"   ✅ {len(found_fields)} champs: {', '.join(found_fields[:4])}")
+            print(f"   {len(found_fields)} champs: {', '.join(found_fields[:4])}")
         else:
-            print(f"   ⚠️ Aucune donnée extraite")
+            print(f"   Aucune donnée extraite")
         
         # Afficher méthode et score
         method = data.get('ocr_method', 'N/A')
@@ -665,10 +666,10 @@ class FFVBOptimizedExtractor:
         """Résumé complet avec analyses"""
         print(f"\n🎉 EXTRACTION OPTIMISÉE TERMINÉE!")
         print("=" * 50)
-        print(f"📊 Joueurs traités: {total_players}")
-        print(f"✅ Succès: {self.success_count}")
-        print(f"❌ Erreurs: {self.error_count}")
-        print(f"📄 Fichier: {self.output_file}")
+        print(f" Joueurs traités: {total_players}")
+        print(f" Succès: {self.success_count}")
+        print(f" Erreurs: {self.error_count}")
+        print(f" Fichier: {self.output_file}")
         
         if self.extracted_data:
             # Analyses statistiques
@@ -676,13 +677,13 @@ class FFVBOptimizedExtractor:
 
     def analyze_extraction_results(self):
         """Analyse les résultats d'extraction"""
-        print(f"\n📈 ANALYSES DES RÉSULTATS:")
+        print(f"\n ANALYSES DES RÉSULTATS:")
         print("-" * 30)
         
         # Complétude moyenne
         scores = [float(p.get('completeness_score', 0)) for p in self.extracted_data]
         avg_completeness = sum(scores) / len(scores) if scores else 0
-        print(f"📊 Complétude moyenne: {avg_completeness:.1f}%")
+        print(f" Complétude moyenne: {avg_completeness:.1f}%")
         
         # Succès par champ
         fields = ['poste', 'taille', 'poids', 'club']
@@ -699,7 +700,7 @@ class FFVBOptimizedExtractor:
                 methods[method] = []
             methods[method].append(float(p.get('quality_score', 0)))
         
-        print(f"\n🏆 MEILLEURES MÉTHODES OCR:")
+        print(f"\n MEILLEURES MÉTHODES OCR:")
         for method, scores in methods.items():
             if scores:
                 avg_score = sum(scores) / len(scores)
@@ -721,7 +722,7 @@ class FFVBOptimizedExtractor:
 
 def main():
     """Fonction principale optimisée"""
-    print("🏐 EXTRACTEUR OCR OPTIMISÉ FFVB")
+    print(" EXTRACTEUR OCR OPTIMISÉ FFVB")
     print("Version perfectionnée avec patterns améliorés")
     print()
     
@@ -733,16 +734,15 @@ def main():
         extractor.debug_mode = (debug_choice == 'o')
         
         if extractor.debug_mode:
-            print("🔍 Mode debug activé - affichage détaillé des patterns")
+            print(" Mode debug activé - affichage détaillé des patterns")
         
         extractor.extract_all_players()
         
-        print(f"\n🎯 EXTRACTION OPTIMISÉE TERMINÉE!")
-        print(f"📋 Résultats dans: {extractor.output_file}")
-        print(f"🔧 Patterns spécialement optimisés pour Théo Faure et autres")
+        print(f"\n EXTRACTION OPTIMISÉE TERMINÉE!")
+        print(f" Résultats dans: {extractor.output_file}")
         
     except Exception as e:
-        print(f"❌ Erreur fatale: {e}")
+        print(f" Erreur fatale: {e}")
 
 if __name__ == "__main__":
     main()

@@ -13,12 +13,12 @@ def analyze_and_clean_players():
     print("=" * 50)
     
     if not os.path.exists('ffvb_players_complete.csv'):
-        print("❌ Fichier ffvb_players_complete.csv non trouvé")
+        print(" Fichier ffvb_players_complete.csv non trouvé")
         return
     
     # Charger les données
     players = load_players_data()
-    print(f"📊 Total lignes dans le fichier: {len(players)}")
+    print(f" Total lignes dans le fichier: {len(players)}")
     
     # Analyser les doublons
     duplicates_analysis = analyze_duplicates(players)
@@ -41,13 +41,13 @@ def load_players_data():
             reader = csv.DictReader(f)
             players = list(reader)
     except Exception as e:
-        print(f"❌ Erreur lecture fichier: {e}")
+        print(f" Erreur lecture fichier: {e}")
     
     return players
 
 def analyze_duplicates(players):
     """Analyse les types de doublons"""
-    print(f"\n🔍 ANALYSE DES DOUBLONS:")
+    print(f"\n ANALYSE DES DOUBLONS:")
     print("-" * 30)
     
     # Grouper par nom
@@ -74,13 +74,13 @@ def analyze_duplicates(players):
     number_duplicates = {num: indices for num, indices in by_number.items() if len(indices) > 1}
     image_duplicates = {img: indices for img, indices in by_image.items() if len(indices) > 1}
     
-    print(f"👥 Doublons par nom: {len(name_duplicates)}")
-    print(f"🔢 Doublons par numéro: {len(number_duplicates)}")
-    print(f"🖼️ Doublons par image: {len(image_duplicates)}")
+    print(f" Doublons par nom: {len(name_duplicates)}")
+    print(f" Doublons par numéro: {len(number_duplicates)}")
+    print(f" Doublons par image: {len(image_duplicates)}")
     
     # Afficher quelques exemples
     if name_duplicates:
-        print(f"\n📋 Exemples doublons par nom:")
+        print(f"\n Exemples doublons par nom:")
         for name, occurrences in list(name_duplicates.items())[:3]:
             print(f"   {name}: {len(occurrences)} occurrences")
             for idx, player in occurrences[:2]:  # Max 2 exemples
@@ -95,7 +95,7 @@ def analyze_duplicates(players):
 
 def deduplicate_players(players):
     """Déduplique les joueurs en gardant la meilleure version"""
-    print(f"\n🎯 DÉDUPLICATION EN COURS...")
+    print(f"\n DÉDUPLICATION EN COURS...")
     
     # Créer un dictionnaire pour identifier les joueurs uniques
     unique_players = {}
@@ -132,8 +132,8 @@ def deduplicate_players(players):
     
     unique_list.sort(key=sort_key)
     
-    print(f"✅ Déduplication terminée")
-    print(f"📊 Joueurs uniques: {len(unique_list)}")
+    print(f" Déduplication terminée")
+    print(f" Joueurs uniques: {len(unique_list)}")
     
     return unique_list
 
@@ -175,7 +175,7 @@ def save_clean_data(unique_players):
     output_file = 'ffvb_players_clean.csv'
     
     if not unique_players:
-        print("❌ Aucune donnée à sauvegarder")
+        print(" Aucune donnée à sauvegarder")
         return
     
     try:
@@ -201,38 +201,38 @@ def save_clean_data(unique_players):
             writer.writeheader()
             writer.writerows(unique_players)
         
-        print(f"✅ Données nettoyées sauvées: {output_file}")
+        print(f" Données nettoyées sauvées: {output_file}")
         
     except Exception as e:
-        print(f"❌ Erreur sauvegarde: {e}")
+        print(f" Erreur sauvegarde: {e}")
 
 def print_cleaning_summary(original_count, clean_count, duplicates_analysis):
     """Affiche le résumé du nettoyage"""
-    print(f"\n📊 RÉSUMÉ DU NETTOYAGE:")
+    print(f"\n RÉSUMÉ DU NETTOYAGE:")
     print("=" * 30)
-    print(f"📥 Lignes originales: {original_count}")
-    print(f"✅ Joueurs uniques: {clean_count}")
-    print(f"🗑️ Doublons supprimés: {original_count - clean_count}")
+    print(f" Lignes originales: {original_count}")
+    print(f" Joueurs uniques: {clean_count}")
+    print(f" Doublons supprimés: {original_count - clean_count}")
     
     if original_count > 0:
         reduction_pct = ((original_count - clean_count) / original_count) * 100
-        print(f"📈 Réduction: {reduction_pct:.1f}%")
+        print(f" Réduction: {reduction_pct:.1f}%")
     
     # Détail des types de doublons
     name_dups = len(duplicates_analysis['by_name'])
     if name_dups > 0:
-        print(f"👥 Joueurs avec doublons de nom: {name_dups}")
+        print(f" Joueurs avec doublons de nom: {name_dups}")
     
-    print(f"\n📄 Fichier nettoyé: ffvb_players_clean.csv")
-    print(f"🎯 Prêt pour l'extraction OCR!")
+    print(f"\n Fichier nettoyé: ffvb_players_clean.csv")
+    print(f" Prêt pour l'extraction OCR!")
 
 def preview_clean_data():
     """Affiche un aperçu des données nettoyées"""
     if not os.path.exists('ffvb_players_clean.csv'):
-        print("❌ Fichier ffvb_players_clean.csv non trouvé")
+        print(" Fichier ffvb_players_clean.csv non trouvé")
         return
     
-    print(f"\n👀 APERÇU DES DONNÉES NETTOYÉES:")
+    print(f"\n APERÇU DES DONNÉES NETTOYÉES:")
     print("-" * 40)
     
     try:
@@ -240,7 +240,7 @@ def preview_clean_data():
             reader = csv.DictReader(f)
             players = list(reader)
         
-        print(f"📊 Total joueurs uniques: {len(players)}")
+        print(f" Total joueurs uniques: {len(players)}")
         
         # Afficher les 10 premiers
         print(f"\n👥 PREMIERS JOUEURS:")
@@ -255,11 +255,11 @@ def preview_clean_data():
         
         # Statistiques
         with_images = sum(1 for p in players if p.get('url_cv_image', '').strip())
-        print(f"\n📈 STATISTIQUES:")
+        print(f"\n STATISTIQUES:")
         print(f"   Images CV disponibles: {with_images}/{len(players)} ({(with_images/len(players)*100):.1f}%)")
         
     except Exception as e:
-        print(f"❌ Erreur lecture aperçu: {e}")
+        print(f" Erreur lecture aperçu: {e}")
 
 def main():
     """Fonction principale"""
@@ -273,7 +273,7 @@ def main():
     # Afficher un aperçu
     preview_clean_data()
     
-    print(f"\n🚀 PROCHAINES ÉTAPES:")
+    print(f"\n PROCHAINES ÉTAPES:")
     print(f"1. Vérifiez ffvb_players_clean.csv")
     print(f"2. Lancez: python final_ocr_extractor.py")
     print(f"   (modifiez le nom du fichier d'entrée)")

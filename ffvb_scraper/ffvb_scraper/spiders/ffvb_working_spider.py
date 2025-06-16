@@ -27,8 +27,7 @@ class FFVBWorkingSpider(scrapy.Spider):
             text_content = ' '.join(container.css('::text').getall())
             
             # Recherche de noms (mots avec majuscules)
-            nom_match = re.search(r'\b([A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\-']{2,}(?:\s+[A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\-']{2,})+)\b', text_content)
-            
+            nom_match = re.search(r'\b([A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\-\']{2,}(?:\s+[A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\-\']{2,})+)\b', text_content)            
             if nom_match:
                 nom = nom_match.group(1).strip()
                 
@@ -81,8 +80,7 @@ class FFVBWorkingSpider(scrapy.Spider):
         
         # Nom depuis titre
         title = response.css('title::text').get() or response.css('h1::text').get() or ''
-        nom_match = re.search(r'([A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\s\-']+)', title)
-        
+        nom_match = re.search(r'([A-ZÀ-Ÿ][a-zA-ZÀ-ÿ\s\-\']+)', title)        
         if nom_match:
             yield {
                 'nom_joueur': nom_match.group(1).strip(),

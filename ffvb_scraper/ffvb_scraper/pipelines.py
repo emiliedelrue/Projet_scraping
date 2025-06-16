@@ -24,6 +24,9 @@ class ValidationPipeline:
         elif adapter.get('fonction'):
             # Item staff valide
             self.validate_staff_item(adapter, spider)
+        elif adapter.get('Année') and (adapter.get('Masculin') or adapter.get('Feminin')):
+            # Item résultat/championnat valide
+            self.validate_result_item(adapter, spider)
         else:
             # Item invalide
             spider.logger.warning(f"Item rejeté - données insuffisantes: {dict(adapter)}")
@@ -60,6 +63,38 @@ class ValidationPipeline:
         """Valider un item staff"""
         if not adapter.get('fonction'):
             raise DropItem("Fonction du staff manquante")
+    
+    def validate_result_item(self, adapter, spider):
+        """Valider un item résultat/championnat"""
+        # Nettoyer les espaces insécables (\xa0)
+        for field in ['Masculin', 'Feminin']:
+            if adapter.get(field):
+                # Convertir la liste en string si nécessaire et nettoyer
+                value = adapter[field]
+                if isinstance(value, list):
+                    value = value[0] if value else ""
+                # Nettoyer les espaces insécables et les espaces
+                cleaned_value = str(value).replace('\xa0', ' ').strip()
+                adapter[field] = cleaned_value if cleaned_value else None
+        
+        # Nettoyer l'année
+        if adapter.get('Année'):
+            annee = adapter['Année']
+            if isinstance(annee, list):
+                annee = annee[0] if annee else ""
+            try:
+                annee_int = int(str(annee))
+                if annee_int < 1900 or annee_int > 2030:
+                    spider.logger.warning(f"Année suspecte: {annee_int}")
+                adapter['Année'] = str(annee_int)
+            except (ValueError, TypeError):
+                spider.logger.warning(f"Année invalide: {annee}")
+                adapter['Année'] = str(annee)
+        
+        # Vérifier qu'il y a au moins un champion (masculin ou féminin)
+        if not adapter.get('Masculin') and not adapter.get('Feminin'):
+            spider.logger.warning(f"Aucun champion trouvé pour l'année {adapter.get('Année')}")
+            raise DropItem("Aucun champion trouvé")
 
 class CSVExportPipeline:
     """Pipeline d'export CSV"""
