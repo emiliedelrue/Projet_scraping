@@ -190,3 +190,14 @@ class StaffItem(scrapy.Item):
         input_processor=MapCompose(clean_text),
         output_processor=TakeFirst()
     )
+
+class DataItem(scrapy.Item):
+    Année = scrapy.Field()
+    Masculin = scrapy.Field()
+    Feminin = scrapy.Field()
+
+class ResultItem(scrapy.Item):
+    Année = scrapy.Field()
+    Masculin = scrapy.Field()
+    Feminin = scrapy.Field()
+    Type_Championnat = scrapy.Field()
