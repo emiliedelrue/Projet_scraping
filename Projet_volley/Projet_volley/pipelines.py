@@ -126,6 +126,27 @@ class ResultatFFVBPipeline:
                 raise
 
 
+class ChampionBeachFFVBPipeline:
+    def open_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley':
+            self.file = open('championnat_france_beach_volley.csv', 'w', newline='', encoding='utf-8')
+            self.writer = csv.writer(self.file)
+            self.writer.writerow(['Année', 'Champion Masculin', 'Champion Féminin'])
+
+    def process_item(self, item, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley' and 'Année' in item:  
+            self.writer.writerow([
+                item.get('Année', ''),      
+                item.get('Masculin', ''),   
+                item.get('Feminin', '')     
+            ])
+        return item
+
+    def close_spider(self, spider):
+        if spider.name == 'ffvb_champions_France_beach_volley' and hasattr(self, 'file'):
+            self.file.close()
+
+
 class ValidationPipeline:
     """Pipeline de validation des données"""
     

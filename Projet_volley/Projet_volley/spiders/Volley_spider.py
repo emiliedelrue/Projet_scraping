@@ -82,6 +82,24 @@ class FFVBAllChampionsSpider(scrapy.Spider):
                 yield loader.load_item()
 
 
+class FFVBChampionsFranceBeachSpider(scrapy.Spider):
+    name = 'ffvb_champions_France_beach_volley'
+    
+    start_urls = [
+        'http://www.ffvb.org/index.php?lvlid=230&dsgtypid=37&artid=308&pos=0'
+    ]
+
+    def parse(self, response):
+        for row in response.css("tr"):
+            if row.css("th[scope='row']") and len(row.css("td")) >= 2:
+                loader = ItemLoader(item=DataItem(), selector=row)  
+                loader.add_css("Année", "th[scope='row']::text")  
+                loader.add_css("Masculin", "td:nth-child(2)::text")  
+                loader.add_css("Feminin", "td:nth-child(3)::text")   
+                yield loader.load_item()
+
+
+
 class FFVBPlayersSpider(scrapy.Spider):
     name = 'ffvb_players'
     allowed_domains = ['ffvb.org', 'www.ffvb.org']
